@@ -14,11 +14,10 @@
 
 class Pushover
 {
-	// api url
 	const API_URL = 'https://api.pushover.net/1/messages.xml';
-    //validation url
+	const CANCEL_URL = 'https://api.pushover.net/1/receipts/%s/cancel.json?token=%s';
+	const RECEIPT_URL = 'https://api.pushover.net/1/receipts/%s.json?token=%s';
     const VALIDATION_URL = 'https://api.pushover.net/1/users/validate.json';
-    //sounds URL
     const SOUNDS_URL = 'https://api.pushover.net/1/sounds.json?token=%s';
 
 	/**
@@ -458,11 +457,6 @@ class Pushover
 			$c = curl_init();
 			curl_setopt($c, CURLOPT_URL, self::API_URL);
 			curl_setopt($c, CURLOPT_HEADER, false);
-			/*
-			if possible, set CURLOPT_SSL_VERIFYPEER to true..
-			- http://www.tehuber.com/phps/cabundlegen.phps
-			*/
-			curl_setopt($c, CURLOPT_SSL_VERIFYPEER, false);
 			curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($c, CURLOPT_POSTFIELDS, array(
 			  	'token' => $this->getToken(),
@@ -481,6 +475,8 @@ class Pushover
 			));
 			$response = curl_exec($c);
 			$xml = simplexml_load_string($response);
+            
+            $this->response=$xml;
 
 			if($this->getDebug()) {
 				return array('output' => $xml, 'input' => $this);
@@ -488,7 +484,19 @@ class Pushover
 			else {
 				return ($xml->status == 1) ? true : false;
 			}
-		}
-	}
+        } else {
+            throw new Exception("token, user and message must be set");
+        }
+    }
+    public function receipt_status($receipt) {
+    }
+    public function cancel($receipt) {
+            $c = curl_init();
+			curl_setopt($c, CURLOPT_URL, sprintf(self::CANCEL_URL, $receipt, $this->getToken()));
+			curl_setopt($c, CURLOPT_HEADER, false);
+			curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
+            $response = curl_exec($c);
+            $this->response=json_decode($response);
+    }
 }
 ?>
